@@ -106,10 +106,7 @@ async def text_to_txt(client, message: Message):
     await inputn.delete()
     await editable.delete()
 
-    if raw_textn == '/d':
-        custom_file_name = 'txt_file'
-    else:
-        custom_file_name = raw_textn
+    custom_file_name = 'txt_file' if raw_textn == '/d' else raw_textn
 
     txt_file = os.path.join("downloads", f'{custom_file_name}.txt')
     os.makedirs(os.path.dirname(txt_file), exist_ok=True)
@@ -140,10 +137,7 @@ async def youtube_to_txt(client, message: Message):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             result = ydl.extract_info(youtube_link, download=False)
-            if 'entries' in result:
-                title = result.get('title', 'youtube_playlist')
-            else:
-                title = result.get('title', 'youtube_video')
+            title = result.get('title', 'youtube_playlist' if 'entries' in result else 'youtube_video')
         except yt_dlp.utils.DownloadError as e:
             await message.reply_text(f"<pre><code>🚨 Error occurred: {str(e)}</code></pre>")
             return
@@ -336,7 +330,6 @@ async def drm_txt_handler(bot: Client, m: Message):
 
     await editable.edit("**🔹Enter Your Token/Header\n🔹Send /anything to skip**")
     input4: Message = await bot.listen(editable.chat.id)
-    raw_text4 = input4.text
     await input4.delete(True)
 
     await editable.edit("**🔹Send Video Thumb URL or photo\n🔹Send /d or No to skip**")
@@ -369,7 +362,7 @@ async def drm_txt_handler(bot: Client, m: Message):
         link0 = "https://" + Vxy
 
         name1 = re.sub(r'[()_\t:/\+#|@*\.]', '', links[i][0]).replace("https", "").replace("http", "").strip()
-        name = f'{name1[:60]}'
+        name = f'{name1[:60]}' if name1 else f"Video_{count}"
 
         if "youtu" in url:
             ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
@@ -378,15 +371,16 @@ async def drm_txt_handler(bot: Client, m: Message):
         else:
             ytf = f"b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba"
        
-        if "jw-prod" in url:
+        # Specific command logic for xhcdn / m3u8 streams
+        if "xhcdn.com" in url or ".m3u8" in url:
+            cmd = f'yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --referer "https://www.xvideos.com/" --no-check-certificates --hls-use-mpegts -f "bestvideo+bestaudio/best" "{url}" -o "{name}.mp4"'
+        elif "jw-prod" in url:
             cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
         elif "webvideos.classplusapp." in url:
             cmd = f'yt-dlp --add-header "referer:https://web.classplusapp.com/" --add-header "x-cdn-tag:empty" -f "{ytf}" "{url}" -o "{name}.mp4"'
         elif "youtube.com" in url or "youtu.be" in url:
             cookie_arg = f'--cookies {cookies_file_path}' if os.path.exists(cookies_file_path) else ''
             cmd = f'yt-dlp {cookie_arg} -f "{ytf}" "{url}" -o "{name}.mp4"'
-        elif "xhcdn.com" in url or ".m3u8" in url:
-            cmd = f'yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" --referer "https://www.xvideos.com/" --no-check-certificates --allow-unplayable-formats -f "best" "{url}" -o "{name}.mp4"'
         else:
             cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
 
@@ -456,7 +450,7 @@ async def text_handler(bot: Client, m: Message):
         
     editable = await m.reply_text("<pre><code>**🔹Processing your link...\n🔁Please wait...⏳**</code></pre>")
 
-    await editable.edit("╭━━━━❰ᴇɴᴛᴇʀ ʀᴇꜱᴏʟᴜᴛɪᴏɴ❱━━➣ \n┣━━⪼ send `144`  for 144p\n┣━━⪼ send `240`  for 240p\n┣━━⪼ send `360`  for 360p\n┣━━⪼ send `480`  for 480p\n┣━━⪼ send `720`  for 720p\n┣━━⪼ send `1080` for 1080p\n╰━━⌈⚡[`🦋🇸‌🇦‌🇮‌🇳‌🇮‌🦋`]⚡⌋━━➣ ")
+    await editable.edit("╭━━━━❰ᴇɴᴛᴇʀ ʀᴇꜱᴏ🇱🇺🇹🇮🇴🇳❱━━➣ \n┣━━⪼ send `144`  for 144p\n┣━━⪼ send `240`  for 240p\n┣━━⪼ send `360`  for 360p\n┣━━⪼ send `480`  for 480p\n┣━━⪼ send `720`  for 720p\n┣━━⪼ send `1080` for 1080p\n╰━━⌈⚡[`🦋🇸‌🇦‌🇮‌🇳‌🇮‌🦋`]⚡⌋━━➣ ")
     input2: Message = await bot.listen(editable.chat.id, filters=filters.text & filters.user(m.from_user.id))
     raw_text2 = input2.text
     quality = f"{raw_text2}p"
@@ -484,15 +478,15 @@ async def text_handler(bot: Client, m: Message):
         else:
             ytf = f"b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba"
        
-        if "jw-prod" in url:
+        if "xhcdn.com" in url or ".m3u8" in url:
+            cmd = f'yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --referer "https://www.xvideos.com/" --no-check-certificates --hls-use-mpegts -f "bestvideo+bestaudio/best" "{url}" -o "{name}.mp4"'
+        elif "jw-prod" in url:
             cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
         elif "webvideos.classplusapp." in url:
             cmd = f'yt-dlp --add-header "referer:https://web.classplusapp.com/" --add-header "x-cdn-tag:empty" -f "{ytf}" "{url}" -o "{name}.mp4"'
         elif "youtube.com" in url or "youtu.be" in url:
             cookie_arg = f'--cookies {cookies_file_path}' if os.path.exists(cookies_file_path) else ''
             cmd = f'yt-dlp {cookie_arg} -f "{ytf}" "{url}" -o "{name}.mp4"'
-        elif "xhcdn.com" in url or ".m3u8" in url:
-            cmd = f'yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" --referer "https://www.xvideos.com/" --no-check-certificates --allow-unplayable-formats -f "best" "{url}" -o "{name}.mp4"'
         else:
             cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
 
