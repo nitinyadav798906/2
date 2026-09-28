@@ -4,7 +4,7 @@ import asyncio
 import subprocess
 from pyrogram.types import Message
 
-# Video se Duration, Width, Height nikalne ka function
+# Video se Duration, Width, Height nikalne ka function (Fixes 00:00 duration issue)
 def get_video_attributes(file_path):
     duration = 0
     width = 1280
@@ -34,28 +34,6 @@ def take_ss(video_path):
         print(f"Thumbnail error: {e}")
     return None
 
-# Real-time Upload Progress Bar (Speed, Size, ETA)
-async def progress_bar(current, total, ud_type, message, start_time, title):
-    now = time.time()
-    diff = now - start_time
-    if round(diff % 3.0) == 0 or current == total:
-        percentage = current * 100 / total
-        speed = current / diff
-        elapsed_time = round(diff)
-        time_to_completion = round((total - current) / speed) if speed > 0 else 0
-        
-        tmp = f"**{ud_type} Status:**\n\n"
-        tmp += f"📚 **Title:** `{title}`\n\n"
-        tmp += f"📊 **Progress:** {percentage:.2f}%\n"
-        tmp += f"🚀 **Speed:** {humanbytes(speed)}/s\n"
-        tmp += f"💾 **Size:** {humanbytes(current)} / {humanbytes(total)}\n"
-        tmp += f"⏱️ **ETA:** {time_formatter(time_to_completion)}\n"
-        
-        try:
-            await message.edit(tmp)
-        except Exception:
-            pass
-
 def humanbytes(size):
     if not size:
         return "0 B"
@@ -69,12 +47,61 @@ def time_formatter(seconds):
     hours, minutes = divmod(minutes, 60)
     return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
 
-# Complete Video Sending Function
+# Real-time Upload Progress Bar (Live Speed, Size, ETA)
+async def progress_bar(current, total, ud_type, message, start_time, title):
+    now = time.time()
+    diff = now - start_time
+    if round(diff % 4.0) == 0 or current == total:
+        percentage = current * 100 / total
+        speed = current / diff
+        time_to_completion = round((total - current) / speed) if speed > 0 else 0
+        
+        tmp = f"**{ud_type} Status:**\n\n"
+        tmp += f"📚 **Title:** `{title}`\n\n"
+        tmp += f"📊 **Progress:** {percentage:.2f}%\n"
+        tmp += f"🚀 **Speed:** {humanbytes(speed)}/s\n"
+        tmp += f"💾 **Size:** {humanbytes(current)} / {humanbytes(total)}\n"
+        tmp += f"⏱️ **ETA:** {time_formatter(time_to_completion)}\n"
+        
+        try:
+            await message.edit_text(tmp)
+        except Exception:
+            # Agar message delete ho jaye ya error aaye toh ignores silently
+            pass
+
+# Video Download Karne Ka Helper Function
+async def download_video(url, cmd, name):
+    download_dir = "downloads"
+    os.makedirs(download_dir, exist_ok=True)
+    out_file = os.path.join(download_dir, f"{name}.mp4")
+    
+    # Executing command
+    process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    await process.communicate()
+    
+    # Check downloaded file
+    if os.path.exists(f"{name}.mp4"):
+        os.rename(f"{name}.mp4", out_file)
+        return out_file
+    elif os.path.exists(out_file):
+        return out_file
+    else:
+        raise Exception("File not found after download completion.")
+
+# Safe Video Sending Function
 async def send_vid(bot, m, cc, filename, thumb, name, prog):
-    await prog.edit("📤 **Starting Video Upload...**")
+    try:
+        await prog.edit_text("📤 **Starting Video Upload...**")
+    except Exception:
+        prog = await m.reply_text("📤 **Starting Video Upload...**")
+        
     start_time = time.time()
     
-    # 1. Video Duration aur Resolution nikalein
+    # 1. Duration aur Resolution nikalein
     duration, width, height = get_video_attributes(filename)
     
     # 2. Auto Thumbnail Handle Karein
@@ -98,6 +125,13 @@ async def send_vid(bot, m, cc, filename, thumb, name, prog):
             progress=progress_bar,
             progress_args=("📤 Uploading", prog, start_time, name)
         )
+        
+        # Upload hone ke baad progress status message delete kar do
+        try:
+            await prog.delete()
+        except Exception:
+            pass
+
     except Exception as e:
         await m.reply_text(f"⚠️ Upload Error: `{str(e)}`")
     finally:
