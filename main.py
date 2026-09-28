@@ -90,6 +90,70 @@ async def cookies_handler(client: Client, m: Message):
     except Exception as e:
         await m.reply_text(f"⚠️ An error occurred: {str(e)}")
 
+@bot.on_message(filters.command(["sky"]))
+async def sky_txt_filter(client: Client, message: Message):
+    editable = await message.reply_text("<blockquote>📂 **Send the .txt file** to extract only Title, `.m3u8`, and `.mp4` links.</blockquote>")
+    
+    input_msg: Message = await bot.listen(message.chat.id)
+    if not input_msg.document or not input_msg.document.file_name.endswith(".txt"):
+        await editable.edit("🚨 **Error:** Please send a valid `.txt` file.")
+        return
+
+    file_path = await input_msg.download()
+    await input_msg.delete(True)
+    await editable.edit("🔄 **Processing file, filtering links...**")
+
+    filtered_lines = []
+
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+
+        for line in lines:
+            line_str = line.strip()
+            if not line_str:
+                continue
+
+            match = re.search(r'https?://\S+', line_str)
+            if match:
+                url = match.group(0)
+                
+                if ".m3u8" in url.lower() or ".mp4" in url.lower():
+                    title_part = line_str[:match.start()].strip()
+                    title_part = re.sub(r'[:|\-–]+$', '', title_part).strip()
+                    
+                    if title_part:
+                        filtered_lines.append(f"{title_part}: {url}")
+                    else:
+                        filtered_lines.append(url)
+
+        os.remove(file_path)
+
+        if not filtered_lines:
+            await editable.edit("⚠️ **No `.m3u8` or `.mp4` links found in the file.**")
+            return
+
+        output_filename = f"filtered_{input_msg.document.file_name}"
+        output_path = os.path.join("downloads", output_filename)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(filtered_lines))
+
+        await editable.delete(True)
+        await message.reply_document(
+            document=output_path,
+            caption=f"✅ **Filtered File Ready!**\n\n📌 **Total Extracted Links:** `{len(filtered_lines)}`\n🎯 **Contains:** Title + `.m3u8` / `.mp4` URLs only."
+        )
+        
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
+    except Exception as e:
+        await editable.edit(f"⚠️ **Error:** `{str(e)}`")
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
 @bot.on_message(filters.command(["t2t"]))
 async def text_to_txt(client, message: Message):
     editable = await message.reply_text("<blockquote>Welcome to the Text to .txt Converter!\nSend the **text** to convert into a `.txt` file.</blockquote>")
@@ -238,6 +302,7 @@ async def help_handler(client: Client, m: Message):
         f"📌 𝗠𝗮𝗶𝗻 𝗙𝗲𝗮𝘁𝘂𝗿𝗲𝘀:\n\n"  
         f"➥ /start – Bot Status Check\n"
         f"➥ /drm – Extract from .txt (Auto)\n"
+        f"➥ /sky – Filter TXT (Only Title + .m3u8/.mp4)\n"
         f"➥ /y2t – YouTube → .txt Converter\n"  
         f"➥ /t2t – Text → .txt Generator\n" 
         f"➥ /stop – Cancel Running Task\n"
@@ -307,14 +372,14 @@ async def drm_txt_handler(bot: Client, m: Message):
     input0: Message = await bot.listen(editable.chat.id)
     raw_text = input0.text
     await input0.delete(True)
-           
+            
     await editable.edit("**🔹Enter Your Batch Name\n🔹Send 1 to use default.**")
     input1: Message = await bot.listen(editable.chat.id)
     raw_text0 = input1.text
     await input1.delete(True)
     b_name = file_name.replace('_', ' ') if raw_text0 == '1' else raw_text0
 
-    await editable.edit("**╭━━━━❰ᴇɴᴛᴇʀ ʀᴇꜱᴏʟᴜᴛɪᴏɴ❱━━➣ \n┣━━⪼ send `144`  for 144p\n┣━━⪼ send `240`  for 240p\n┣━━⪼ send `360`  for 360p\n┣━━⪼ send `480`  for 480p\n┣━━⪼ send `720`  for 720p\n┣━━⪼ send `1080` for 1080p\n╰━━⌈⚡[`🦋🇸‌🇦‌🇮‌🇳‌🇮‌🦋`]⚡⌋━━➣**")
+    await editable.edit("**╭━━━━❰ᴇɴᴛᴇʀ ʀᴇꜱᴏ🇱🇺🇹🇮🇴🇳❱━━➣ \n┣━━⪼ send `144`  for 144p\n┣━━⪼ send `240`  for 240p\n┣━━⪼ send `360`  for 360p\n┣━━⪼ send `480`  for 480p\n┣━━⪼ send `720`  for 720p\n┣━━⪼ send `1080` for 1080p\n╰━━⌈⚡[`🦋🇸‌🇦‌🇮‌🇳‌🇮‌🦋`]⚡⌋━━➣**")
     input2: Message = await bot.listen(editable.chat.id)
     raw_text2 = input2.text
     quality = f"{raw_text2}p"
@@ -371,8 +436,7 @@ async def drm_txt_handler(bot: Client, m: Message):
             ytf = f"bestvideo[height<={raw_text2}]+bestaudio/best[height<={raw_text2}]"
         else:
             ytf = f"b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba"
-       
-        # Specific command logic for xhcdn / m3u8 streams
+        
         if "xhcdn.com" in url or ".m3u8" in url:
             cmd = f'yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --referer "https://www.xvideos.com/" --no-check-certificates --hls-use-mpegts -f "bestvideo+bestaudio/best" "{url}" -o "{name}.mp4"'
         elif "jw-prod" in url:
@@ -478,7 +542,7 @@ async def text_handler(bot: Client, m: Message):
             ytf = f"bestvideo[height<={raw_text2}]+bestaudio/best[height<={raw_text2}]"
         else:
             ytf = f"b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba"
-       
+        
         if "xhcdn.com" in url or ".m3u8" in url:
             cmd = f'yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --referer "https://www.xvideos.com/" --no-check-certificates --hls-use-mpegts -f "bestvideo+bestaudio/best" "{url}" -o "{name}.mp4"'
         elif "jw-prod" in url:
