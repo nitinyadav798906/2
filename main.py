@@ -392,7 +392,7 @@ async def drm_txt_handler(bot: Client, m: Message):
     input3: Message = await bot.listen(editable.chat.id)
     raw_text3 = input3.text
     await input3.delete(True)
-    CR = '[𝄟⃝‌🐬🇳‌ɪᴋʜɪʟ𝄟⃝🐬](https://t.me/+MdZ2996M2G43MWFl)' if raw_text3 == '1' else raw_text3
+    CR = 'SKYSTAR' if raw_text3 == '1' else raw_text3
 
     await editable.edit("**🔹Enter Your Token/Header\n🔹Send /anything to skip**")
     input4: Message = await bot.listen(editable.chat.id)
@@ -450,7 +450,7 @@ async def drm_txt_handler(bot: Client, m: Message):
             cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
 
         try:
-            cc = f'[——— ✦ {str(count).zfill(3)} ✦ ———]({link0})\n\n**🎞️ Title :** `{name1}`\n**├── Extension :** .mp4\n**├── Resolution :** [{res}]\n\n**📚 Course :** {b_name}\n\n**🌟 Extracted By :** {CR}'
+            cc = f'——— ✦ {str(count).zfill(3)} ✦ ———\n\n📦 **Title :** `{name1}`\n├── **Extension :** .mp4\n├── **Resolution :** [{res}]\n\n📚 **Course :** {b_name}\n\n🌟 **Extracted By :** {CR}'
 
             if "drive" in url:
                 try:
@@ -467,27 +467,25 @@ async def drm_txt_handler(bot: Client, m: Message):
                 remaining_links = len(links) - count
                 progress = (count / len(links)) * 100
                 emoji_message = await show_random_emojis(m)
-                Show = f"🚀𝐏ρη𝐠𝐫𝐞𝐬𝐬 » {progress:.2f}%\n┃\n" \
-                       f"┣🔗𝐈𝐧𝐝𝐞𝐱 » {count}/{len(links)}\n┃\n" \
-                       f"╰━🖇️𝐑𝐞𝐦𝐚𝐢𝐧 » {remaining_links}\n" \
+                Show = f"🚀 **Progress:** {progress:.2f}%\n" \
+                       f"🔗 **Index:** {count}/{len(links)}\n" \
+                       f"🖇️ **Remaining:** {remaining_links}\n" \
                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" \
-                       f"**⚡DᴏWNʟᴏAᴅIɴGSᴛAʀTᴇD...⏳**\n┃\n" \
-                       f'┣💃𝐂𝐫𝐞𝐝𝐢𝐭 » {CR}\n┃\n' \
-                       f"╰━📚𝐁𝐚𝐭𝐜𝐡 » {b_name}\n" \
+                       f"⚡ **Downloading Started...⏳**\n" \
+                       f"💃 **Credit:** {CR}\n" \
+                       f"📚 **Batch:** {b_name}\n" \
                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" \
-                       f"📚𝐓𝐢𝐭𝐥𝐞 » {name}\n┃\n" \
-                       f"┣🍁𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {quality}\n┃\n" \
-                       f'┣━🔗𝐋𝐢𝐧𝐤 » <a href="{link0}">**Original Link**</a>\n┃\n' \
-                       f'╰━━🖇️𝐔𝐫𝐥 » <a href="{url}">**Api Link**</a>\n' \
+                       f"📚 **Title:** {name}\n" \
+                       f"🍁 **Quality:** {quality}\n" \
                        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" \
-                       f"🛑**Send** /stop **to stop process**\n┃\n" \
-                       f"╰━✦𝐁𝐨𝐭 𝐌𝐚𝐝𝐞 𝐁𝐲 ✦ [𝙎𝘼Iℕ🇮 𝘽𝙊𝙏𝙎🐦](https://t.me/+MdZ2996M2G43MWFl)"
+                       f"🛑 Send /stop to cancel"
                 
                 prog = await m.reply_text(Show, disable_web_page_preview=True)
                 res_file = await helper.download_video(url, cmd, name)
                 filename = res_file
                 await emoji_message.delete()
-                await prog.delete(True)
+                
+                # Send video using helper.py
                 await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
                 count += 1
                 await asyncio.sleep(1)
@@ -556,22 +554,20 @@ async def text_handler(bot: Client, m: Message):
             cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
 
         try:
-            cc = f'🎞️𝐓𝐢𝐭𝐥𝐞 » `{name} [{res}].mp4`\n🔗𝐋𝐢𝐧𝐤 » <a href="{link}">__**CLICK HERE**__</a>\n\n🌟𝐄𝐱𝐭𝐫𝐚𝐜𝐭𝐞𝐝 𝐁𝐲 » SAINI BOTS'
+            cc = f'🎞️ **Title »** `{name} [{res}].mp4`\n🔗 **Link »** <a href="{link}">__**CLICK HERE**__</a>\n\n🌟 **Extracted By »** SKYSTAR'
             
             show_message = await show_random_emojis(m)
-            Show = f"**⚡DᴏWNʟᴏAᴅIɴGSᴛAʀTᴇD...⏳**\n\n" \
-                   f"📚𝐓𝐢𝐭𝐥𝐞 » `{name}`\n" \
-                   f"🍁𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » `{quality}`\n" \
-                   f'🔗𝐋𝐢𝐧𝐤 » <a href="{link}">**Original Link**</a>\n' \
-                   f'🖇️𝐔𝐫𝐥 » <a href="{url}">**Api Link**</a>\n\n' \
-                   f"🛑**Send** /stop **to stop process**\n" \
-                   f"╰━✦𝐁𝐨𝐭 𝐌𝐚𝐝𝐞 𝐁𝐲 ✦ [𝙎𝘼Iℕ🇮 𝘽𝙊𝙏𝙎🐦](https://t.me/+MdZ2996M2G43MWFl)"
+            Show = f"⚡ **Downloading Started...⏳**\n\n" \
+                   f"📚 **Title »** `{name}`\n" \
+                   f"🍁 **Quality »** `{quality}`\n\n" \
+                   f"🛑 **Send** /stop **to stop process**"
             
             prog = await m.reply_text(Show, disable_web_page_preview=True)
             res_file = await helper.download_video(url, cmd, name)
             filename = res_file
             await show_message.delete()
-            await prog.delete(True)
+            
+            # Send video using helper.py
             await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
             
         except Exception as e:
