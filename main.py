@@ -16,7 +16,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import FloodWait
 
-# Bot client setup (Fixed initialization)
+# Bot client setup
 bot = Client(
     "bot",
     api_id=API_ID,
@@ -43,7 +43,7 @@ image_urls = [
     "https://tinypic.host/images/2025/02/07/DeWatermark.ai_1738952933236-1.png",
 ]
 
-# Speed configuration for downloading
+# External Downloader Setup (Aria2c for fast downloading)
 SPEED_FLAGS = '--external-downloader aria2c --external-downloader-args "-x 16 -s 16 -k 1M"' if shutil.which("aria2c") else '--concurrent-fragments 16'
 
 async def show_random_emojis(message):
@@ -119,7 +119,6 @@ async def drm_txt_handler(bot: Client, m: Message):
         
         for line in content:
             if "://" in line:
-                # Handle Title:URL or Plain URL formats safely
                 if ":" in line and not line.startswith("http"):
                     parts = line.split(":", 1)
                     title = parts[0].strip()
@@ -245,15 +244,18 @@ async def drm_txt_handler(bot: Client, m: Message):
             cc = f'——— ✦ {str(count).zfill(3)} ✦ ———\n\n📦 **Title :** `{name1}`\n├── **Extension :** .mp4\n├── **Resolution :** [{res}]\n\n📚 **Course :** {b_name}\n\n🌟 **Extracted By :** {CR}'
 
             if "drive" in url:
-                try:
-                    ka = await helper.download(url, name)
-                    await bot.send_document(chat_id=m.chat.id, document=ka, caption=cc)
-                    count += 1
-                    if os.path.exists(ka):
-                        os.remove(ka)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    continue    
+                while True:
+                    try:
+                        ka = await helper.download(url, name)
+                        await bot.send_document(chat_id=m.chat.id, document=ka, caption=cc)
+                        count += 1
+                        if os.path.exists(ka):
+                            os.remove(ka)
+                        break
+                    except FloodWait as e:
+                        await asyncio.sleep(e.x + 1)
+                    except Exception as ex:
+                        raise ex
             else:
                 remaining_links = len(links) - count
                 progress = (count / len(links)) * 100
@@ -280,13 +282,22 @@ async def drm_txt_handler(bot: Client, m: Message):
                     try: await emoji_message.delete()
                     except Exception: pass
                 
-                await helper.send_vid(bot, m, cc, res_file, thumb, name, prog)
+                # Handling FloodWait during Send Video
+                uploaded = False
+                while not uploaded:
+                    try:
+                        await helper.send_vid(bot, m, cc, res_file, thumb, name, prog)
+                        uploaded = True
+                    except FloodWait as e:
+                        await asyncio.sleep(e.x + 2)
+                    except Exception as e:
+                        raise e
                 
                 if os.path.exists(res_file):
                     os.remove(res_file)
                 
                 count += 1
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(1.5)  # Safe delay to prevent rate limit
 
         except Exception as e:
             await m.reply_text(
@@ -304,7 +315,7 @@ async def drm_txt_handler(bot: Client, m: Message):
             if prog:
                 try: await prog.delete()
                 except Exception: pass
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
             continue
 
     if thumb != "/d" and os.path.exists(thumb):
