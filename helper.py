@@ -140,3 +140,17 @@ async def send_vid(bot, m, cc, filename, thumb, name, prog):
             os.remove(filename)
         if generated_thumb and os.path.exists(generated_thumb):
             os.remove(generated_thumb)
+
+# helper.py inside progress callback function
+last_update_time = 0
+
+async def progress(current, total, message):
+    global last_update_time
+    now = time.time()
+    # Update progress only every 5 seconds to avoid FLOOD_WAIT
+    if now - last_update_time > 5:
+        last_update_time = now
+        try:
+            await message.edit_text(f"Uploading... {current * 100 / total:.1f}%")
+        except Exception:
+            pass
